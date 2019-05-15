@@ -1,23 +1,18 @@
 #include <iostream>
-#include <vector>
 #include <math.h>
+#include <vector>
+#include "GLBall.hpp"
+#include "NBodyScene.hpp"
 using namespace std;
-
-class body
+class body: public GLBall
 {
 protected:
-    int n;
-    double time;
-    double g_const = (6.67 / 100000000000);
-    double s_x, s_y, f_x, f_y;
     double *radius = NULL;
     double *massa = NULL;
     double *x = NULL;
     double *y = NULL;
     double *v_x = NULL;
     double *v_y = NULL;
-    double *new_x = NULL;
-    double *new_y = NULL;
 public:
     body(int n)
     {
@@ -27,8 +22,6 @@ public:
         y = new double[n];
         v_x = new double[n];
         v_y = new double[n];
-        new_x = new double[n];
-        new_y = new double[n];
     }
     ~body()
     {
@@ -38,6 +31,52 @@ public:
         delete[]y;
         delete[]v_x;
         delete[]v_y;
+    }
+    double getX(unsigned int i) const override {
+        return x[i];
+    }
+    double getY(unsigned int i) const override {
+        return y[i];
+    }
+    double getR(unsigned int i) const override {
+        return radius[i];
+    }
+};
+class scene : public NBodyScene {
+protected:
+    int n;
+    std::vector<body> bodies;
+    double time;
+    double g_const = (6.67 / 100000000000);
+    double s_x, s_y, f_x, f_y;
+    //double *radius = NULL;
+    //double *massa = NULL;
+    //double *x = NULL;
+    //double *y = NULL;
+    //double *v_x = NULL;
+    //double *v_y = NULL;
+    double *new_x = NULL;
+    double *new_y = NULL;
+public:
+    scene(int n)
+    {
+        //radius = new double[n];
+        //massa = new double[n];
+        //x = new double[n];
+        //y = new double[n];
+        //v_x = new double[n];
+        //v_y = new double[n];
+        new_x = new double[n];
+        new_y = new double[n];
+    }
+    ~scene()
+    {
+        //delete[]radius;
+        //delete[]massa;
+        //delete[]x;
+        //delete[]y;
+        //delete[]v_x;
+        //delete[]v_y;
         delete[]new_x;
         delete[]new_y;
     }
@@ -69,7 +108,6 @@ public:
     {
         v_y[i] = value;
     }
-
     void new_location (int k)
     {
 
@@ -97,11 +135,41 @@ public:
             y[i] = new_y[i];
         }
     }
+    unsigned int getNumberOfBodies() const override {
+        return bodies.size();
+    }
+
+    const GLBall& getBody(unsigned int number) const override
+    {
+        return bodies.at(number);
+    }
+
+    void doTimeStep() override
+    {
+        for(body& b : bodies)
+            b.move(0.1);
+    }
+
+    // Далее ещё куча ваших методов, никак не связанных с NBodyScene
+
+    void initScene() {
+        bodies.push_back(body(0, 0, 10, 1, 0));
+        bodies.push_back(body(15, 15, 1, 0, 1));
+    }
 };
+// Функция, которая готовит всю сцену и возвращает готовый объект.
+// Если нужно читать из файла и консоли, вызывать кучу методов - это здесь.
+NBodyScene* getScene()
+{
+    body* s = new body();
+    s->initScene();
+    return s;
+}
+
 int main()
 {
     double T, M, R, X, Y, VX, VY;
-    body a(3);
+    scene a(3);
     for(int i = 0; i < 3; ++i)
     {
         cin>>T;
