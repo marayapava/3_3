@@ -1,20 +1,28 @@
 #include <iostream>
-#include <math.h>
-#include <vector>
 #include "GLBall.hpp"
 #include "NBodyScene.hpp"
+#include <math.h>
+#include <vector>
+
 using namespace std;
-class body: public GLBall
-{
+
+// Ваш класс для описания тела.
+// Унаследован от GLBall, реализует его интерфейс с методами getX / getY / getR.
+// (Для точечных тел внутри getR можете сделать возврат константы.)
+class SampleBall : public GLBall {
 protected:
+    int n;
     double *radius = NULL;
     double *massa = NULL;
     double *x = NULL;
     double *y = NULL;
     double *v_x = NULL;
     double *v_y = NULL;
+    double *new_x = NULL;
+    double *new_y = NULL;
+
 public:
-    body(int n)
+    SampleBall(int n)
     {
         radius = new double[n];
         massa = new double[n];
@@ -22,8 +30,10 @@ public:
         y = new double[n];
         v_x = new double[n];
         v_y = new double[n];
+        new_x = new double[n];
+        new_y = new double[n];
     }
-    ~body()
+    ~SampleBall()
     {
         delete[]radius;
         delete[]massa;
@@ -31,60 +41,10 @@ public:
         delete[]y;
         delete[]v_x;
         delete[]v_y;
-    }
-    double getX(unsigned int i) const override {
-        return x[i];
-    }
-    double getY(unsigned int i) const override {
-        return y[i];
-    }
-    double getR(unsigned int i) const override {
-        return radius[i];
-    }
-};
-class scene : public NBodyScene {
-protected:
-    int n;
-    std::vector<body> bodies;
-    double time;
-    double g_const = (6.67 / 100000000000);
-    double s_x, s_y, f_x, f_y;
-    //double *radius = NULL;
-    //double *massa = NULL;
-    //double *x = NULL;
-    //double *y = NULL;
-    //double *v_x = NULL;
-    //double *v_y = NULL;
-    double *new_x = NULL;
-    double *new_y = NULL;
-public:
-    scene(int n)
-    {
-        //radius = new double[n];
-        //massa = new double[n];
-        //x = new double[n];
-        //y = new double[n];
-        //v_x = new double[n];
-        //v_y = new double[n];
-        new_x = new double[n];
-        new_y = new double[n];
-    }
-    ~scene()
-    {
-        //delete[]radius;
-        //delete[]massa;
-        //delete[]x;
-        //delete[]y;
-        //delete[]v_x;
-        //delete[]v_y;
         delete[]new_x;
         delete[]new_y;
     }
-    void set_time(double value)
-    {
-        time = value;
-    }
-    void set_radius(int i,double value)
+     void set_radius(int i,double value)
     {
         radius[i] = value;
     }
@@ -108,9 +68,71 @@ public:
     {
         v_y[i] = value;
     }
+    void move(double dt) {
+        for (int i = 0; i < n; i++)
+        {
+            x[i] += v_x[i] * dt;
+            y[i] += v_y[i] * dt;
+
+        }
+    }
+
+    // Реализация методов интерфейса на базе *ваших* переменных.
+    // Переписывать всю свою реализацию под эти имена *не* надо.
+    double getX(int i) const {
+        return x[i];
+    }
+    double getY(int i) const {
+        return y[i];
+    }
+    double getR(int i) const {
+        return radius[i];
+    }
+};
+
+// Ваш класс сцены. В него де-факто превратится текущий main или его аналог.
+// Унаследован от NBodyScene, реализует интерфейс с методами getNumberOfBodies / getBody / doTimeStep.
+class SampleScene : public NBodyScene {
+protected:
+    int n;
+    double time;
+    double g_const = (6.67 / 100000000000);
+    double s_x, s_y, f_x, f_y;
+    std::vector<SampleBall> bodies;
+    double *radius = NULL;
+    double *massa = NULL;
+    double *x = NULL;
+    double *y = NULL;
+    double *v_x = NULL;
+    double *v_y = NULL;
+    double *new_x = NULL;
+    double *new_y = NULL;
+
+public:
+    SampleScene(int n)
+    {
+        radius = new double[n];
+        massa = new double[n];
+        x = new double[n];
+        y = new double[n];
+        v_x = new double[n];
+        v_y = new double[n];
+        new_x = new double[n];
+        new_y = new double[n];
+    }
+    ~SampleScene()
+    {
+        delete[]radius;
+        delete[]massa;
+        delete[]x;
+        delete[]y;
+        delete[]v_x;
+        delete[]v_y;
+        delete[]new_x;
+        delete[]new_y;
+    }
     void new_location (int k)
     {
-
         for (int i = 0; i < n; i++)
         {
             new_x[k] = x[k];
@@ -134,46 +156,48 @@ public:
             x[i] = new_x[i];
             y[i] = new_y[i];
         }
-    }
+    }    // Реализация методов интерфейса на базе *ваших* переменных
+
     unsigned int getNumberOfBodies() const override {
         return bodies.size();
     }
 
-    const GLBall& getBody(unsigned int number) const override
-    {
+    const GLBall& getBody(unsigned int number) const override {
         return bodies.at(number);
     }
 
-    void doTimeStep() override
-    {
-        for(body& b : bodies)
+    void doTimeStep() override {
+        for(SampleBall& b : bodies)
             b.move(0.1);
     }
 
     // Далее ещё куча ваших методов, никак не связанных с NBodyScene
 
     void initScene() {
-        bodies.push_back(body(0, 0, 10, 1, 0));
-        bodies.push_back(body(15, 15, 1, 0, 1));
+        bodies.push_back(SampleBall(0, 0, 10, 1, 0));
+        bodies.push_back(SampleBall(15, 15, 1, 0, 1));
     }
 };
+
 // Функция, которая готовит всю сцену и возвращает готовый объект.
 // Если нужно читать из файла и консоли, вызывать кучу методов - это здесь.
 NBodyScene* getScene()
 {
-    body* s = new body();
+    SampleScene* s = new SampleScene();
     s->initScene();
     return s;
 }
 
+
+// Ваш отладочный main
 int main()
 {
-    double T, M, R, X, Y, VX, VY;
-    scene a(3);
-    for(int i = 0; i < 3; ++i)
+    // Создаём сцену
+    SampleScene* scene = (SampleScene*)getScene();
+    double M, R, X, Y, VX, VY;
+    SampleBall a(5);
+    for(int i = 0; i < 5; ++i)
     {
-        cin>>T;
-        a.set_time(T);
         cin>>M;
         a.set_massa(i, M);
         cin>>R;
@@ -186,8 +210,8 @@ int main()
         a.set_v_x(i, VX);
         cin>>VY;
         a.set_v_y(i, VY);
-        for(int i = 0; i < 3; i++)
-            a.new_location(i);
     }
+    delete scene;
     return 0;
 }
+
